@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sopa de Letras - Metodología CETO e IA</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --text-color: #f8fafc;
+      --border-color: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2rem;
+      color: #38bdf8;
+      margin-bottom: 8px;
+    }
+
+    p {
+      color: #94a3b8;
+      font-size: 0.95rem;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+      max-width: 1100px;
+      width: 100%;
+    }
+
+    /* Tablero Sopa de Letras */
+    .grid-container {
+      background-color: var(--card-bg);
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border-color);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(14, 32px);
+      grid-template-rows: repeat(14, 32px);
+      gap: 4px;
+    }
+
+    .cell {
+      width: 32px;
+      height: 32px;
+      background-color: #0f172a;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 0.95rem;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+    }
+
+    .cell:hover {
+      background-color: #334155;
+    }
+
+    /* ANIMACIÓN DE TITILEO INTENSO (NIVEL 4) */
+    @keyframes titileoFuerte {
+      0% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+        box-shadow: 0 0 4px currentColor;
+      }
+      50% {
+        opacity: 0.2;
+        transform: scale(1.18);
+        filter: brightness(2.5);
+        box-shadow: 0 0 18px currentColor, 0 0 28px currentColor;
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+        filter: brightness(1);
+        box-shadow: 0 0 4px currentColor;
+      }
+    }
+
+    .found {
+      animation: titileoFuerte 0.7s infinite ease-in-out;
+      font-weight: 900;
+      color: #ffffff !important;
+      border: 2px solid #ffffff !important;
+      z-index: 10;
+    }
+
+    /* Estilos del Panel Lateral de Palabras */
+    .panel {
+      background-color: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      min-width: 280px;
+      flex: 1;
+      border: 1px solid var(--border-color);
+    }
+
+    .panel h2 {
+      font-size: 1.2rem;
+      color: #38bdf8;
+      margin-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 8px;
+    }
+
+    .word-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .word-item {
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #0f172a;
+      border: 1px solid var(--border-color);
+    }
+
+    .word-item.completed {
+      text-decoration: line-through;
+      opacity: 0.8;
+    }
+
+    /* Colores por Palabra (Nivel 3) */
+    .c-contexto { border-left: 5px solid #2563eb; }
+    .c-experto { border-left: 5px solid #059669; }
+    .c-tarea { border-left: 5px solid #7c3aed; }
+    .c-salida { border-left: 5px solid #ea580c; }
+    .c-inteligencia { border-left: 5px solid #dc2626; }
+    .c-artificial { border-left: 5px solid #d97706; }
+    .c-analisis { border-left: 5px solid #db2777; }
+    .c-datos { border-left: 5px solid #0891b2; }
+    .c-prompt { border-left: 5px solid #65a30d; }
+    .c-diplomado { border-left: 5px solid #4f46e5; }
+
+    /* Estilos dinámicos asignados al encontrar */
+    .bg-contexto { background-color: #2563eb !important; color: #2563eb; }
+    .bg-experto { background-color: #059669 !important; color: #059669; }
+    .bg-tarea { background-color: #7c3aed !important; color: #7c3aed; }
+    .bg-salida { background-color: #ea580c !important; color: #ea580c; }
+    .bg-inteligencia { background-color: #dc2626 !important; color: #dc2626; }
+    .bg-artificial { background-color: #d97706 !important; color: #d97706; }
+    .bg-analisis { background-color: #db2777 !important; color: #db2777; }
+    .bg-datos { background-color: #0891b2 !important; color: #0891b2; }
+    .bg-prompt { background-color: #65a30d !important; color: #65a30d; }
+    .bg-diplomado { background-color: #4f46e5 !important; color: #4f46e5; }
+
+    .btn-revelar {
+      margin-top: 20px;
+      width: 100%;
+      padding: 10px;
+      background-color: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .btn-revelar:hover {
+      background-color: #0369a1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Sopa de Letras: Metodología CETO e IA</h1>
+    <p>Diplomado de Análisis de Datos y Fundamentos de Inteligencia Artificial</p>
+  </header>
+
+  <div class="container">
+    <div class="grid-container">
+      <div id="grid" class="grid"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Palabras Objetivo (10)</h2>
+      <ul class="word-list">
+        <li id="w-contexto" class="word-item c-contexto">CONTEXTO <span>[0,0] → [0,7]</span></li>
+        <li id="w-experto" class="word-item c-experto">EXPERTO <span>[1,8] → [1,1]</span></li>
+        <li id="w-tarea" class="word-item c-tarea">TAREA <span>[8,12] → [5,12]</span></li>
+        <li id="w-salida" class="word-item c-salida">SALIDA <span>[8,13] → [3,13]</span></li>
+        <li id="w-inteligencia" class="word-item c-inteligencia">INTELIGENCIA <span>[5,0] → [13,0]</span></li>
+        <li id="w-artificial" class="word-item c-artificial">ARTIFICIAL <span>[13,1] → [13,10]</span></li>
+        <li id="w-analisis" class="word-item c-analisis">ANALISIS <span>[10,11] → [3,11]</span></li>
+        <li id="w-datos" class="word-item c-datos">DATOS <span>[9,11] → [6,11]</span></li>
+        <li id="w-prompt" class="word-item c-prompt">PROMPT <span>[1,13] → [6,13]</span></li>
+        <li id="w-diplomado" class="word-item c-diplomado">DIPLOMADO <span>[0,11] → [8,3]</span></li>
+      </ul>
+      <button class="btn-revelar" onclick="revelarSopa()">Activar Titileo Fuerte</button>
+    </div>
+  </div>
+
+  <script>
+    // Matriz de 14x14
+    const board = [
+      ['C','O','N','T','E','X','T','O','M','A','X','D','K','L'],
+      ['X','O','O','T','R','E','P','X','E','R','Y','I','I','P'],
+      ['F','D','O','N','D','E','Y','W','Z','T','B','A','L','R'],
+      ['X','I','R','P','D','T','E','B','T','I','U','D','A','O'],
+      ['X','M','Q','Q','N','I','B','R','J','F','N','O','O','M'],
+      ['I','A','U','H','G','N','L','M','R','I','L','M','S','P'],
+      ['N','D','P','D','K','A','V','C','C','A','A','A','I','T'],
+      ['T','O','O','Q','S','H','M','U','Z','H','T','R','C','B'],
+      ['E','S','I','T','J','T','U','A','N','E','T','A','C','S'],
+      ['L','B','J','P','T','S','H','H','D','I','X','D','C','Y'],
+      ['I','R','Q','M','I','I','A','R','A','C','A','O','A','O'],
+      ['G','E','D','G','K','L','A','Y','I','I','F','O','H','M'],
+      ['I','F','H','Y','H','L','Z','F','W','L','Z','D','Z','L'],
+      ['A','R','T','I','F','I','C','I','A','L','B','P','A','M']
+    ];
+
+    const wordsMapping = {
+      'contexto': { id: 'w-contexto', bgClass: 'bg-contexto', cells: [[0,0],[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7]] },
+      'experto': { id: 'w-experto', bgClass: 'bg-experto', cells: [[1,8],[1,7],[1,6],[1,5],[1,4],[1,3],[1,2],[1,1]] },
+      'tarea': { id: 'w-tarea', bgClass: 'bg-tarea', cells: [[8,12],[7,12],[6,12],[5,12]] },
+      'salida': { id: 'w-salida', bgClass: 'bg-salida', cells: [[8,13],[7,13],[6,13],[5,13],[4,13],[3,13]] },
+      'inteligencia': { id: 'w-inteligencia', bgClass: 'bg-inteligencia', cells: [[5,0],[6,0],[7,0],[8,0],[9,0],[10,0],[11,0],[12,0],[13,0]] },
+      'artificial': { id: 'w-artificial', bgClass: 'bg-artificial', cells: [[13,1],[13,2],[13,3],[13,4],[13,5],[13,6],[13,7],[13,8],[13,9],[13,10]] },
+      'analisis': { id: 'w-analisis', bgClass: 'bg-analisis', cells: [[10,11],[9,11],[8,11],[7,11],[6,11],[5,11],[4,11],[3,11]] },
+      'datos': { id: 'w-datos', bgClass: 'bg-datos', cells: [[9,11],[8,11],[7,11],[6,11]] },
+      'prompt': { id: 'w-prompt', bgClass: 'bg-prompt', cells: [[1,13],[2,13],[3,13],[4,13],[5,13],[6,13]] },
+      'diplomado': { id: 'w-diplomado', bgClass: 'bg-diplomado', cells: [[0,11],[1,10],[2,9],[3,8],[4,7],[5,6],[6,5],[7,4],[8,3]] }
+    };
+
+    function renderGrid() {
+      const gridContainer = document.getElementById('grid');
+      gridContainer.innerHTML = '';
+
+      for (let r = 0; r < 14; r++) {
+        for (let c = 0; c < 14; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.row = r;
+          cell.dataset.col = c;
+          cell.innerText = board[r][c];
+          gridContainer.appendChild(cell);
+        }
+      }
+    }
+
+    function revelarSopa() {
+      Object.keys(wordsMapping).forEach(wordKey => {
+        const item = wordsMapping[wordKey];
+        const listEl = document.getElementById(item.id);
+        if (listEl) listEl.classList.add('completed');
+
+        item.cells.forEach(([r, c]) => {
+          const cellEl = document.querySelector(`.cell[data-row="${r}"][data-col="${c}"]`);
+          if (cellEl) {
+            cellEl.classList.add('found', item.bgClass);
+          }
+        });
+      });
+    }
+
+    window.onload = renderGrid;
+  </script>
+</body>
+</html>
